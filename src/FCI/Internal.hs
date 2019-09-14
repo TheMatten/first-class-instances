@@ -5,6 +5,7 @@ module FCI.Internal (
   , Dict
   , inst
   , (==>)
+  , mkInstRep
   , unsafeMkInstRep
   , (:=:)
   ) where
@@ -39,6 +40,15 @@ inst = case unsafeCoerce id :: c :=> Inst c of Wants c -> c
 c ==> a = unsafeCoerce (Wants @c @r a) c
 
 -------------------------------------------------------------------------------
+mkInstRep :: Name -> DecsQ
+mkInstRep name = do
+  Module _ (ModName name') <- thisModule
+  if nameModule name == Just name'
+    then unsafeMkInstRep name
+    else fail $ "Class '" ++ nameBase name
+             ++ "' has to be in the same module as 'mkInstRep' splice"
+
+-------------------------------------------------------------------------------
 unsafeMkInstRep :: Name -> DecsQ
 unsafeMkInstRep name = do
   ClassI (ClassD constraints _ args _ decs) _ <- reify name
@@ -66,6 +76,7 @@ dictInstD constraint conName = \case
     DataInstD [] ''Dict [constraint] Nothing [RecC conName fields] []
 
 -------------------------------------------------------------------------------
+-- TODO: fix name conflicts
 superFields :: [Pred] -> Q [VarBangType]
 superFields = fmap catMaybes . traverse \constraint ->
   appHead constraint & \case
@@ -74,7 +85,6 @@ superFields = fmap catMaybes . traverse \constraint ->
       FamilyI{} -> pure Nothing
     VarT name -> pure $ Just $ superField (nameBase name) constraint
     TupleT i  -> pure $ Just $ superField ("T" ++ show i) constraint
-    -- TODO: fix name conflicts
     EqualityT -> pure $ Just $ superField "Equality" constraint
  where
   superField name@(c:_) constraint = (

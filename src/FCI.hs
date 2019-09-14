@@ -1,6 +1,9 @@
 module FCI (
     Inst
   , Dict
+  , inst
+  , (==>)
+  , mkInstRep
   , module Instances
   ) where
 
