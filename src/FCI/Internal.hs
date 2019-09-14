@@ -7,7 +7,7 @@ module FCI.Internal (
   , (==>)
   , mkInstRep
   , unsafeMkInstRep
-  , (:=:)
+  , (:~) (UnsafeEquality)
   ) where
 
 import           Data.Char
@@ -148,10 +148,10 @@ do let tupleCount = 15
               (tupT i $ AppT (ConT ''Inst) . VarT <$> names')
 
 -------------------------------------------------------------------------------
-type instance Inst (a ~ b) = a :=: b
+type instance Inst (a ~ b) = a :~ b
 
-type role (:=:) nominal nominal
-data a :=: b = UnsafeEquality
+type role (:~) nominal nominal
+data a :~ b = UnsafeEquality
 
 leibniz :: (forall f. f a -> f b) -> Inst (a ~ b)
 leibniz f = f `seq` UnsafeEquality
