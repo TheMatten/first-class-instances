@@ -3,7 +3,7 @@ synopsis    : First class typeclass instances
 description : See the README file in the project repository
 version     : 0.1.0.0
 category    : Language
-git         : "https://gitlab.com/TheMatten/first-class-instances"
+git         : "https://gitlab.com/thematten/first-class-instances"
 license     : BSD3
 author      : "Matej Nižník"
 maintainer  : "matten@tuta.io"
@@ -11,7 +11,10 @@ copyright   : "2019 Matej Nižník"
 
 extra-source-files : [README.md, ChangeLog.md]
 
-dependencies : [base >=4.7 && <5, template-haskell >=2.14 && <2.15]
+dependencies :
+- base             >=4.7     && <5
+- containers       >=0.6.0.1 && <0.7
+- template-haskell >=2.14    && <2.15
 
 library : { source-dirs : src }
 
@@ -29,6 +32,7 @@ tests :
 ghc-options :
 - -ferror-spans
 - -Wall
+- -Werror
 - -Wincomplete-uni-patterns
 - -Wincomplete-record-updates
 - -Wmissing-export-lists
@@ -46,11 +50,13 @@ default-extensions :
 - KindSignatures
 - LambdaCase
 - MultiParamTypeClasses
+- MultiWayIf
 - NamedFieldPuns
 - NoStarIsType
 - PatternSynonyms
 - PolyKinds
 - RankNTypes
+- RecordWildCards
 - RoleAnnotations
 - ScopedTypeVariables
 - TypeApplications
