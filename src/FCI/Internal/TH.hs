@@ -27,21 +27,23 @@ import FCI.Internal.Types (Inst, Dict)
 --
 -- TODO: example, format
 mkInst :: Name -> Q [Dec]
-mkInst name = checkIsFromThisModule name *> unsafeMkInst name
+mkInst name = checkSafeInst name *> unsafeMkInst name
 
 -------------------------------------------------------------------------------
--- | Checks that name was declared in current module, otherwise fails with
--- user-friendly error.
-checkIsFromThisModule :: Name -> Q ()
-checkIsFromThisModule name = do
+-- | Checks that it is save to create 'Inst' instance for given name.
+checkSafeInst :: Name -> Q ()
+checkSafeInst name = do
+  -- TODO
+  isExtEnabled QuantifiedConstraints >>= flip when do
+    fail "'QuantifiedConstraints' are not supported yet"
   Module _ (ModName this_module) <- thisModule
   unless (nameModule name == Just this_module) $ fail
     $  '\'' : nameBase name ++ "' is not declared in current module '"
     ++ this_module ++ "'"
 
 -------------------------------------------------------------------------------
--- | Version of 'mkInst' that without check that class is declared in same
--- module. Use with caution when no other option is reasonable.
+-- | Version of 'mkInst' without any checks. You shouldn't use it unless you're
+-- working on this library.
 unsafeMkInst :: Name -> Q [Dec]
 unsafeMkInst = fmap dictInst . getClassDictInfo
 

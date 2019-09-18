@@ -2,8 +2,10 @@ module FCI.Internal (
     module M
   , inst
   , (==>)
+  , Newtype
   ) where
 
+import Data.Coerce
 import Unsafe.Coerce
 
 import FCI.Internal.Types as M
@@ -36,3 +38,7 @@ d ==> r = unsafeCoerce (Wants @c @r r) d
 -- function.
 newtype c :=> a where
   Wants :: (c => a) -> c :=> a
+
+-------------------------------------------------------------------------------
+-- | Allows to 'coerce' type back and forth between it's argument when safe.
+type Newtype f = forall a. (Coercible a (f a), Coercible (f a) a)
