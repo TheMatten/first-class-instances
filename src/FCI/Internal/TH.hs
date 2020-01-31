@@ -4,6 +4,8 @@ module FCI.Internal.TH (
     mkInst
   , unsafeMkInst
   , getClassDictInfo
+  , ClassDictInfo (..)
+  , ClassDictField (..)
   , dictInst
   ) where
 
@@ -57,8 +59,8 @@ getClassDictInfo className = reify className >>= \case
         className
       , dictTyArg   = foldl1' AppT $ ConT className : map bndrToType args
       , dictConName
-      , dictFields  = superFieldsFromCxt constraints
-                   ++ mapMaybe methodFieldFromDec methods
+      , dictFields  = mapMaybe methodFieldFromDec methods
+      , dictConstraints = constraints
       }
   _ -> fail $ '\'' : nameBase className ++ "' is not a class"
 
@@ -211,6 +213,7 @@ data ClassDictInfo = CDI{
   , dictTyArg   :: Pred
   , dictConName :: Name
   , dictFields  :: [ClassDictField]
+  , dictConstraints :: Cxt
   } deriving Show
 
 -------------------------------------------------------------------------------
