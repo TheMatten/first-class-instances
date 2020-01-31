@@ -10,6 +10,7 @@ module Mockable
   ) where
 
 import Control.Monad.Trans.Reader
+import Control.Monad.Trans.Class
 import FCI
 import GHC.Generics
 import Data.Coerce
@@ -45,6 +46,9 @@ coerceMockable = coerce
 
 newtype Mockable dict m a = Mockable (ReaderT (dict m) m a)
   deriving newtype (Functor, Applicative, Monad)
+
+instance MonadTrans (Mockable dict) where
+  lift = Mockable . lift
 
 
 runMocked :: dict m -> Mockable dict m a -> m a
