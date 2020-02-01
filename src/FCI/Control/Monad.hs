@@ -1,7 +1,7 @@
 {-# language TemplateHaskell #-}
 
 module FCI.Control.Monad (
-    Dict (..)
+    pattern Monad, _Applicative, (|>>=), (|>>), _return, _fail
   , bindMonad
   , joinMonad
   , coerceMonad
@@ -12,7 +12,8 @@ import Data.Coerce
 import Data.Function
 
 import FCI.Control.Applicative as M
-import FCI.Internal
+import FCI.Internal.Definitions
+import FCI.Internal.TH
 
 -------------------------------------------------------------------------------
 unsafeMkInst ''Monad

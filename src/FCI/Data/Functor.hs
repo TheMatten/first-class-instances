@@ -1,14 +1,15 @@
 {-# language TemplateHaskell #-}
 
 module FCI.Data.Functor (
-    Dict (..)
+    pattern Functor, _fmap, (|<$)
   , fmapFunctor
   , coerceFunctor
   ) where
 
 import Data.Coerce
 
-import FCI.Internal
+import FCI.Internal.Definitions
+import FCI.Internal.TH
 
 -------------------------------------------------------------------------------
 unsafeMkInst ''Functor

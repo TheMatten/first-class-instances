@@ -1,7 +1,7 @@
 {-# language TemplateHaskell #-}
 
 module FCI.Control.Applicative (
-    Dict (..)
+    pattern Applicative, _Functor, _pure, (|<*>), _liftA2, (|*>), (|<*)
   , applyApplicative
   , liftA2Applicative
   , coerceApplicative
@@ -11,7 +11,8 @@ module FCI.Control.Applicative (
 import Data.Coerce
 
 import FCI.Data.Functor as M
-import FCI.Internal
+import FCI.Internal.Definitions
+import FCI.Internal.TH
 
 -------------------------------------------------------------------------------
 unsafeMkInst ''Applicative

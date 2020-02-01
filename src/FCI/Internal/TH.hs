@@ -18,7 +18,7 @@ import           Data.STRef
 import           Language.Haskell.TH
 import           Language.Haskell.TH.Syntax
 
-import FCI.Internal.Types (Inst, Dict)
+import FCI.Internal.Definitions (Inst, Dict)
 
 -------------------------------------------------------------------------------
 -- | Creates first class instance representation from based on class. To avoid
