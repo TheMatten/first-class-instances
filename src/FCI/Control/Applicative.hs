@@ -1,7 +1,7 @@
 {-# language TemplateHaskell #-}
 
 module FCI.Control.Applicative (
-    Dict (..)
+    Applicative, _Functor, _pure, (|<*>), _liftA2, (|*>), (|<*)
   , applyApplicative
   , liftA2Applicative
   , coerceApplicative

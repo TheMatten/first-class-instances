@@ -7,18 +7,40 @@ module FCI.Internal.TH (
   , dictInst
   ) where
 
-import           Control.Monad
-import           Control.Monad.ST
-import           Data.Char
-import qualified Data.Kind as K
-import           Data.List
-import qualified Data.Map.Strict as M
-import           Data.Maybe
-import           Data.STRef
-import           Language.Haskell.TH
-import           Language.Haskell.TH.Syntax
+import           Control.Monad        (unless)
+import           Control.Monad.ST     (runST)
+import           Data.Char            (isAlpha)
+import qualified Data.Kind as K       (Type, Constraint)
+import           Data.List            (foldl1')
+import qualified Data.Map.Strict as M (empty, lookup, alter)
+import           Data.Maybe           (mapMaybe)
+import           Data.STRef           (newSTRef, readSTRef, modifySTRef)
+import           Language.Haskell.TH  (
+    mkName
+  , Q
+  , Type               (..)
+  , Dec                (NewtypeInstD, DataInstD, TySynInstD, SigD, ClassD)
+  , Name
+  , Pred
+  , thisModule
+  , nameBase
+  , nameModule
+  , reify
+  , Bang               (Bang)
+  , Con                (RecC, NormalC)
+  , Info               (ClassI)
+  , SourceStrictness   (NoSourceStrictness)
+  , SourceUnpackedness (NoSourceUnpackedness)
+  , TySynEqn           (TySynEqn)
+  , TyVarBndr          (..)
+  )
+import Language.Haskell.TH.Syntax     (
+    Module  (Module)
+  , ModName (ModName)
+  , VarBangType
+  )
 
-import FCI.Internal.Types (Inst, Dict)
+import FCI.Internal.Definitions (Inst, Dict)
 
 -------------------------------------------------------------------------------
 -- | Creates first class instance representation from based on class. To avoid
@@ -33,9 +55,6 @@ mkInst name = checkSafeInst name *> unsafeMkInst name
 -- | Checks that it is save to create 'Inst' instance for given name.
 checkSafeInst :: Name -> Q ()
 checkSafeInst name = do
-  -- TODO
-  isExtEnabled QuantifiedConstraints >>= flip when do
-    fail "'QuantifiedConstraints' are not supported yet"
   Module _ (ModName this_module) <- thisModule
   unless (nameModule name == Just this_module) $ fail
     $  '\'' : nameBase name ++ "' is not declared in current module '"
@@ -46,6 +65,14 @@ checkSafeInst name = do
 -- working on this library.
 unsafeMkInst :: Name -> Q [Dec]
 unsafeMkInst = fmap dictInst . getClassDictInfo
+
+-------------------------------------------------------------------------------
+-- | Use 'Inst' value specified by it's name to create normal typeclass
+-- instance. Requires type signature for this value to exist.
+-- toInstance :: Name -> Q [Dec]
+-- toInstance name = do
+--   cdi <- getClassDictInfo name
+
 
 -------------------------------------------------------------------------------
 -- | Constructs info about class dictionary represenation being created.

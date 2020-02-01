@@ -1,7 +1,7 @@
 {-# language TemplateHaskell #-}
 
 module FCI.Data.Functor (
-    Dict (..)
+    pattern Functor, _fmap, (|<$)
   , fmapFunctor
   , coerceFunctor
   ) where

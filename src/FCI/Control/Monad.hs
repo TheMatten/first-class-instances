@@ -1,7 +1,7 @@
 {-# language TemplateHaskell #-}
 
 module FCI.Control.Monad (
-    Dict (..)
+    pattern Monad, _Applicative, (|>>=), (|>>), _return, _fail
   , bindMonad
   , joinMonad
   , coerceMonad

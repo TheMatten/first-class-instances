@@ -1,5 +1,5 @@
 name        : first-class-instances
-synopsis    : First class typeclass instances
+synopsis    : First-class typeclass instances
 description : See the README file in the project repository
 version     : 0.1.0.0
 category    : Language
@@ -15,6 +15,8 @@ dependencies :
 - base             >=4.7     && <5
 - containers       >=0.6.0.1 && <0.7
 - template-haskell >=2.14    && <2.15
+- ghc              >=8.6.5   && <8.6.6
+- syb              >=0.7.1   && <0.8
 
 library : { source-dirs : src }
 
