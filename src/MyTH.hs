@@ -2,9 +2,9 @@
 {-# LANGUAGE TemplateHaskell               #-}
 
 module MyTH
-  ( makeMockable
-  , mkMockableDict
-  , Dict
+  ( makeImprovised
+  , makeImprovCollection
+  , Improvised
   ) where
 
 import Control.Monad
@@ -20,8 +20,8 @@ import MockableImpl
 import THStuff
 
 
-makeMockable :: Name -> Q [Dec]
-makeMockable name = do
+makeImprovised :: Name -> Q [Dec]
+makeImprovised name = do
   let opts =
         defaultOptions
           { mkInstClassConName = (++ "Impl") . mkInstClassConName defaultOptions
@@ -135,7 +135,7 @@ getClassName :: Name -> Name
 getClassName = overName ("Has" ++)
 
 getMethodName :: Name -> Name
-getMethodName = overName (("get" ++) . (++ "Dict"))
+getMethodName = overName (("get" ++) . (++ "Improvised"))
 
 
 diddleArg :: Type -> Name -> Position -> (Exp, Type) -> Q Exp
@@ -158,7 +158,7 @@ diddleArg m_type r_name pos (arg_exp, arg_type) =
 
 liftCorrectPosition :: Name -> Position -> Exp -> Exp
 liftCorrectPosition r_name Negative arg =
-  VarE 'coerceMockable `AppE` arg `AppE` VarE r_name
+  VarE 'coerceImprovisable `AppE` arg `AppE` VarE r_name
 liftCorrectPosition _ Positive arg =
   VarE 'lift `AppE` arg
 
@@ -197,7 +197,7 @@ makeLiftedCall m_type r_name dict_name field_name args = do
 -- where @expr@ is expected to be the result of a 'makeLiftedCall'.
 makeMockableScaffold :: Name -> Exp -> Exp
 makeMockableScaffold r_name expr =
-  ConE 'Mockable `AppE` (ConE 'ReaderT `AppE` LamE [VarP r_name] expr)
+  ConE 'Improvisable `AppE` (ConE 'ReaderT `AppE` LamE [VarP r_name] expr)
 
 
 ------------------------------------------------------------------------------
@@ -242,7 +242,7 @@ makeMockableInstance cdi = do
         Nothing
         ( foldl AppT (ConT (getClassName class_name)) (args ++ [m_type, VarT dict_name])
         : dictConstraints cdi
-        ) (class_ctr `AppT` (ConT ''Mockable `AppT` VarT dict_name `AppT` m_type))
+        ) (class_ctr `AppT` (ConT ''Improvisable `AppT` VarT dict_name `AppT` m_type))
     $ join methods
 
 data ClassStuff = ClassStuff
@@ -259,7 +259,7 @@ getClassStuff cdi =
       vars_to_keep = init class_vars
       m_type = removeSig $ last class_vars
       class_ctr = foldl AppT (ConT class_name) vars_to_keep
-      inst_type = ConT ''Dict `AppT` (class_ctr `AppT` m_type)
+      inst_type = ConT ''Improvised `AppT` (class_ctr `AppT` m_type)
    in ClassStuff m_type class_ctr inst_type vars_to_keep
 
 
@@ -295,8 +295,8 @@ classifyArg m_type arg_type
 
 
 
-mkMockableDict :: Name -> DecsQ
-mkMockableDict nm = do
+makeImprovCollection :: Name -> DecsQ
+makeImprovCollection nm = do
   reify nm >>= \case
     TyConI (DataD _ tycon_name vars _ [con] _) -> do
       z <-
@@ -321,9 +321,9 @@ makeHasDictInstForField tycon_name vars con_name ts =
     $ length ts
 
 
-isDict :: Type -> Bool
-isDict t
-  | removeTyAnns t == ConT ''Dict = True
+isImprovised :: Type -> Bool
+isImprovised t
+  | removeTyAnns t == ConT ''Improvised = True
   | otherwise                     = False
 
 hasDictInst
@@ -345,7 +345,7 @@ hasDictInst tycon_name bndrs con_name num t idx = do
 
   let apps = splitAppTs t
   case apps of
-    [dict, c] | isDict dict -> do
+    [dict, c] | isImprovised dict -> do
       (ConT class_name : args) <- pure $ splitAppTs c
       pure $
         makeBetterFieldInstance

@@ -1,7 +1,7 @@
 {-# language TemplateHaskell #-}
 
 module FCI.Control.Applicative (
-    Dict (..)
+    Improvised (..)
   , applyApplicative
   , liftA2Applicative
   , coerceApplicative
@@ -20,7 +20,7 @@ unsafeMkInst defaultOptions ''Applicative
 -- | Creates 'Applicative' instance from @apply@ ('<*>') definition.
 applyApplicative :: (forall a. a -> f a)                   -- ^ pure
                  -> (forall a b. f (a -> b) -> f a -> f b) -- ^ apply
-                 -> Dict (Applicative f)
+                 -> Improvised (Applicative f)
 applyApplicative _pure (|<*>) = Applicative{
     _Functor = fmapFunctor $ (|<*>) . _pure
   , _pure
@@ -34,7 +34,7 @@ applyApplicative _pure (|<*>) = Applicative{
 -- | Creates 'Applicative' instance from 'liftA2' definition.
 liftA2Applicative :: (forall a. a -> f a)                               -- ^ pure
                   -> (forall a b c. (a -> b -> c) -> f a -> f b -> f c) -- ^ liftA2
-                  -> Dict (Applicative f)
+                  -> Improvised (Applicative f)
 liftA2Applicative _pure _liftA2 = Applicative{
     _Functor = fmapFunctor $ ($ _pure ()) . _liftA2 . const
   , _pure
@@ -46,7 +46,7 @@ liftA2Applicative _pure _liftA2 = Applicative{
 
 -------------------------------------------------------------------------------
 -- | Creates 'Applicative' instace for any type that can be "'coerce'd out".
-coerceApplicative :: forall f. Newtype f => Dict (Applicative f)
+coerceApplicative :: forall f. Newtype f => Improvised (Applicative f)
 coerceApplicative = Applicative{
     _Functor = coerceFunctor
   , _pure    = coerce

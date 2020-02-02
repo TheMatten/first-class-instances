@@ -24,7 +24,7 @@ import           Data.STRef
 import           Language.Haskell.TH
 import           Language.Haskell.TH.Syntax
 
-import FCI.Internal.Types (Dict)
+import FCI.Internal.Types (Improvised)
 
 -------------------------------------------------------------------------------
 -- | Creates first class instance representation from based on class. To avoid
@@ -202,7 +202,7 @@ dictInst cdi =
       fields  -> mk DataInstD    [RecC    (dictConName cdi) fields ]
   ]
  where
-  mk con fields = con [] ''Dict [dictTyArg cdi] Nothing fields []
+  mk con fields = con [] ''Improvised [dictTyArg cdi] Nothing fields []
 
 -------------------------------------------------------------------------------
 -- | Converts info about class dictionary representation field to record field.
@@ -211,7 +211,7 @@ classDictToRecField cdf = (
     fieldName cdf
   , Bang NoSourceUnpackedness NoSourceStrictness
   , (case fieldSource cdf of
-      Superclass -> AppT $ ConT ''Dict
+      Superclass -> AppT $ ConT ''Improvised
       Method     -> id
     ) $ origType cdf
   )

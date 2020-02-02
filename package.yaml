@@ -1,13 +1,13 @@
-name        : first-class-instances
+name        : improvised
 synopsis    : First class typeclass instances
 description : See the README file in the project repository
 version     : 0.1.0.0
 category    : Language
 git         : "https://gitlab.com/thematten/first-class-instances"
 license     : BSD3
-author      : "Matej Nižník"
-maintainer  : "matten@tuta.io"
-copyright   : "2019 Matej Nižník"
+author      : "Sandy Maguire"
+maintainer  : "sandy@sandymaguire.me"
+copyright   : "2020 Sandy Maguire"
 
 extra-source-files : [README.md, ChangeLog.md]
 
@@ -21,10 +21,8 @@ dependencies :
 library :
   source-dirs : src
   other-modules:
-    - FCI
     - FCI.Control.Applicative
     - FCI.Control.Monad
-    - FCI.Core
     - FCI.Data.Functor
     - FCI.Internal
     - FCI.Internal.TH
@@ -49,7 +47,6 @@ ghc-options :
 # - -Werror
 - -Wincomplete-uni-patterns
 - -Wincomplete-record-updates
-- -Wmissing-export-lists
 - -Widentities
 - -Wredundant-constraints
 - -Wpartial-fields

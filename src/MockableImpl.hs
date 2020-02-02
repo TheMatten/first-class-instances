@@ -8,7 +8,7 @@ module MockableImpl where
 
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Class
-import FCI
+import FCI.Internal
 import GHC.Generics
 import Data.Coerce
 
@@ -25,7 +25,7 @@ instance GCaptureInst U1 where
 instance (GCaptureInst f, GCaptureInst g) => GCaptureInst (f :*: g) where
   gcaptureInst = gcaptureInst :*: gcaptureInst
 
-instance c => GCaptureInst (K1 _1 (Dict c)) where
+instance c => GCaptureInst (K1 _1 (Improvised c)) where
   gcaptureInst = K1 inst
 
 
@@ -36,21 +36,21 @@ captureInst :: CaptureInst d => d
 captureInst = to gcaptureInst
 
 
-coerceMockable :: Mockable dict m a -> dict -> m a
-coerceMockable = coerce
+coerceImprovisable :: Improvisable dict m a -> dict -> m a
+coerceImprovisable = coerce
 
 
 
-newtype Mockable dict m a = Mockable (ReaderT dict m a)
+newtype Improvisable dict m a = Improvisable (ReaderT dict m a)
   deriving newtype (Functor, Applicative, Monad)
 
-instance MonadTrans (Mockable dict) where
-  lift = Mockable . lift
+instance MonadTrans (Improvisable dict) where
+  lift = Improvisable . lift
 
 
-runMocked :: dict -> Mockable dict m a -> m a
-runMocked dict (Mockable r) = runReaderT r dict
+improvise :: dict -> Improvisable dict m a -> m a
+improvise dict (Improvisable r) = runReaderT r dict
 
-runUnmocked :: CaptureInst dict => Mockable dict m a -> m a
-runUnmocked (Mockable r) = runReaderT r captureInst
+runImprovisable :: CaptureInst dict => Improvisable dict m a -> m a
+runImprovisable (Improvisable r) = runReaderT r captureInst
 

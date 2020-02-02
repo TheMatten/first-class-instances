@@ -23,13 +23,13 @@ import Control.Monad.Trans.Writer
 class Monad m => MonadFoo s m | m -> s where
   foo :: m s
   faz :: s -> m ()
-makeMockable ''MonadFoo
+makeImprovised ''MonadFoo
 
 
 data Action s = Faz s
   deriving Show
 
-test :: Dict (MonadFoo Int (Writer [Action Int]))
+test :: Improvised (MonadFoo Int (Writer [Action Int]))
 test =
   MonadFoo
     { _faz = \s -> do
@@ -38,7 +38,7 @@ test =
     }
 
 ok :: [Action Int]
-ok = snd . runWriter . runMocked test $ do
+ok = snd . runWriter . improvise test $ do
   s <- foo
   faz s
   faz 10
@@ -49,23 +49,23 @@ ok = snd . runWriter . runMocked test $ do
 class Monad m => MonadBar m where
   bar :: Int -> m a -> m a
   baz :: m Int
-makeMockable ''MonadBar
+makeImprovised ''MonadBar
 
 
 ------------------------------------------------------------------------------
 -- | The continuation monad
 class Monad m => MonadCont m where
   callCC :: ((a -> m b) -> m a) -> m a
-makeMockable ''MonadCont
+makeImprovised ''MonadCont
 
 
 ------------------------------------------------------------------------------
 -- | A little dict for doing things
 data AppDicts s m =
   AppDicts
-    (Dict (MonadFoo s m))
-    (Dict (MonadBar m))
-mkMockableDict ''AppDicts
+    (Improvised (MonadFoo s m))
+    (Improvised (MonadBar m))
+makeImprovCollection ''AppDicts
 
 
 ------------------------------------------------------------------------------
@@ -80,7 +80,7 @@ myBusinessLogic =
 ------------------------------------------------------------------------------
 -- | mocked out baby
 tested :: Monad m => m Int
-tested = runMocked mocks myBusinessLogic
+tested = improvise mocks myBusinessLogic
   where
     mocks =
       AppDicts

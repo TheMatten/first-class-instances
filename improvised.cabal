@@ -1,0 +1,71 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: c6eecb26bb96f99a3f40b97ba5be6d470c3766ee68e255457065756a1820b4ff
+
+name:           improvised
+version:        0.1.0.0
+synopsis:       First class typeclass instances
+description:    See the README file in the project repository
+category:       Language
+author:         Sandy Maguire
+maintainer:     sandy@sandymaguire.me
+copyright:      2020 Sandy Maguire
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://gitlab.com/thematten/first-class-instances
+
+library
+  exposed-modules:
+      App
+      Mockable
+      MyTH
+      Ok
+  other-modules:
+      FCI.Control.Applicative
+      FCI.Control.Monad
+      FCI.Data.Functor
+      FCI.Internal
+      FCI.Internal.TH
+      FCI.Internal.Types
+      MockableImpl
+      THStuff
+  hs-source-dirs:
+      src
+  default-extensions: BlockArguments ConstraintKinds DataKinds DuplicateRecordFields GADTs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoStarIsType PatternSynonyms PolyKinds QuantifiedConstraints RankNTypes RecordWildCards RoleAnnotations ScopedTypeVariables TypeApplications TypeFamilies TypeFamilyDependencies TypeOperators ViewPatterns
+  ghc-options: -ferror-spans -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Wpartial-fields -Wcompat
+  build-depends:
+      base >=4.7 && <5
+    , containers >=0.6.0.1 && <0.7
+    , lens
+    , template-haskell >=2.14 && <2.15
+    , transformers
+  default-language: Haskell2010
+
+test-suite first-class-instances-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_improvised
+  hs-source-dirs:
+      test
+  default-extensions: BlockArguments ConstraintKinds DataKinds DuplicateRecordFields GADTs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoStarIsType PatternSynonyms PolyKinds QuantifiedConstraints RankNTypes RecordWildCards RoleAnnotations ScopedTypeVariables TypeApplications TypeFamilies TypeFamilyDependencies TypeOperators ViewPatterns
+  ghc-options: -ferror-spans -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Widentities -Wredundant-constraints -Wpartial-fields -Wcompat -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , containers >=0.6.0.1 && <0.7
+    , first-class-instances
+    , lens
+    , template-haskell >=2.14 && <2.15
+    , transformers
+  default-language: Haskell2010

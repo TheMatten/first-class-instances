@@ -21,15 +21,15 @@ infixr 1 :=>
 -- to be used with @TypeApplications@ when it's usage is ambiguous.
 --
 -- TODO: example
-inst :: forall c. c => Dict c
-inst = case unsafeCoerce id :: c :=> Dict c of Wants d -> d
+inst :: forall c. c => Improvised c
+inst = case unsafeCoerce id :: c :=> Improvised c of Wants d -> d
 
 -------------------------------------------------------------------------------
 -- | /Reifies/ first class instance into constraint in context of supplied
 -- continuation.
 --
 -- TODO: example
-(==>) :: forall c r. Dict c -> (c => r) -> r
+(==>) :: forall c r. Improvised c -> (c => r) -> r
 d ==> r = unsafeCoerce (Wants @c @r r) d
 
 -------------------------------------------------------------------------------

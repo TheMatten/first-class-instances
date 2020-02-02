@@ -2,7 +2,7 @@
 
 
 -- | Core types of first class instances.
-module FCI.Internal.Types (Dict) where
+module FCI.Internal.Types (Improvised) where
 
 import Data.Kind
 
@@ -12,4 +12,5 @@ import Data.Kind
 -- instead, create new instance of 'Inst' mapping to separate datatype.
 --
 -- TODO: format of generated instance
-data family Dict :: Constraint -> Type
+data family Improvised :: Constraint -> Type
+

@@ -5,16 +5,16 @@
 {-# LANGUAGE UndecidableInstances       #-}
 
 module Mockable
-  ( Mockable ()
-  , runMocked
-  , runUnmocked
-  , Dict
-  , CaptureInst ()
-  , makeMockable
-  , mkMockableDict
+  ( Improvisable ()
+  , improvise
+  -- , runImprovisable
+  , Improvised
+  -- , CaptureInst ()
+  , makeImprovised
+  , makeImprovCollection
   ) where
 
-import FCI
+import FCI.Internal
 import MockableImpl
 import MyTH
 
