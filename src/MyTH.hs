@@ -28,7 +28,7 @@ import Control.Monad.Trans.Class
 
 makeMockable :: Name -> Q [Dec]
 makeMockable name = do
-  dict_info <- getClassDictInfo name
+  dict_info <- getClassDictInfo defaultOptions name
   let class_name = className dict_info
 
   fmap join $ sequenceA
@@ -74,13 +74,6 @@ getClassName = overName ("Has" ++)
 
 getMethodName :: Name -> Name
 getMethodName = overName firstToLower
-
-
-coerceArgIfNecessary :: Type -> Name -> (Name, Type) -> Exp
-coerceArgIfNecessary m_type r_name (arg_name, arg_type)
-  | m_type /= head (splitAppTs arg_type) = VarE arg_name
-  | otherwise =
-      VarE 'coerceMockable `AppE` VarE arg_name `AppE` VarE r_name
 
 
 diddleArg :: Type -> Name -> Position -> (Exp, Type) -> Q Exp
@@ -203,7 +196,7 @@ makeMockableInstance cdi = do
       class_ctr = foldl AppT (ConT class_name) vars_to_keep
       okname = getMethodName class_name
 
-  methods <- for (dictFields cdi) $ \fi -> do
+  methods <- for (filter ((== Method) . fieldSource) $ dictFields cdi) $ \fi -> do
     makeLiftedMethod m_type okname (origName fi) (fieldName fi) $ init $ splitArrowTs $ origType fi
 
   pure
