@@ -19,8 +19,8 @@ unsafeMkInst ''Applicative
 
 -------------------------------------------------------------------------------
 -- | Creates 'Applicative' instance from @apply@ ('<*>') definition.
-applyApplicative :: (forall a. a -> f a)                   -- ^ pure
-                 -> (forall a b. f (a -> b) -> f a -> f b) -- ^ apply
+applyApplicative :: (forall a. a -> f a)                    -- ^ 'pure'
+                 -> (forall a b. f (a -> b) -> f a -> f b)  -- ^ ('<*>')
                  -> Inst (Applicative f)
 applyApplicative _pure (|<*>) = Applicative{
     _Functor = fmapFunctor $ (|<*>) . _pure
@@ -33,8 +33,10 @@ applyApplicative _pure (|<*>) = Applicative{
 
 -------------------------------------------------------------------------------
 -- | Creates 'Applicative' instance from 'liftA2' definition.
-liftA2Applicative :: (forall a. a -> f a)                               -- ^ pure
-                  -> (forall a b c. (a -> b -> c) -> f a -> f b -> f c) -- ^ liftA2
+liftA2Applicative :: (forall a. a -> f a)
+                  -- ^ 'pure'
+                  -> (forall a b c. (a -> b -> c) -> f a -> f b -> f c)
+                  -- ^ 'Control.Applicative.liftA2'
                   -> Inst (Applicative f)
 liftA2Applicative _pure _liftA2 = Applicative{
     _Functor = fmapFunctor $ ($ _pure ()) . _liftA2 . const
@@ -46,7 +48,7 @@ liftA2Applicative _pure _liftA2 = Applicative{
   }
 
 -------------------------------------------------------------------------------
--- | Creates 'Applicative' instace for any type that can be "'coerce'd out".
+-- | Creates 'Applicative' instance for any type that can be "'coerce'd out".
 coerceApplicative :: forall f. Newtype f => Inst (Applicative f)
 coerceApplicative = Applicative{
     _Functor = coerceFunctor

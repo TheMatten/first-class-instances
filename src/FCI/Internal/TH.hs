@@ -9,16 +9,17 @@ module FCI.Internal.TH (
   , dictInst
   ) where
 
-import           Control.Monad
-import           Control.Monad.ST
-import           Data.Char
+import Language.Haskell.TH.Syntax
+
+import           Control.Monad       (when, unless)
+import           Control.Monad.ST    (runST)
+import           Data.Char           (isAlpha)
 import qualified Data.Kind as K
-import           Data.List
+import           Data.List           (foldl1')
 import qualified Data.Map.Strict as M
-import           Data.Maybe
-import           Data.STRef
-import           Language.Haskell.TH
-import           Language.Haskell.TH.Syntax
+import           Data.Maybe          (mapMaybe)
+import           Data.STRef          (newSTRef, readSTRef, modifySTRef)
+import           Language.Haskell.TH (thisModule)
 
 import FCI.Internal.Types (Inst, Dict)
 
@@ -33,7 +34,7 @@ import FCI.Internal.Types (Inst, Dict)
 --
 --     * Prefix names ('Show', 'Applicative') are prefixed with @_@
 --     * Operators (('~')) are prefixed with @||@
---     * Tuples are converted into prefix names "_Tuple"
+--     * Tuples are converted into prefix names @_Tuple@
 --     * Additional occurencies of same prefix name get postfix index starting
 --       from 1
 --     * Additional occurencies of same operator are postfixed with increasing

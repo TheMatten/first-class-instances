@@ -1,7 +1,7 @@
 {-# options_ghc -Wno-unused-imports #-}
 
 -- | /First-class instances (FCI)/ - interface for explicit manipulation of
--- representations of constraints. 
+-- representations of constraints.
 module FCI (
     Inst
   , mkInst

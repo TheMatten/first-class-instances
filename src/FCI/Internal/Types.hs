@@ -2,7 +2,7 @@
 -- stability and safety of it's interface.
 module FCI.Internal.Types (Inst, Dict) where
 
-import Data.Kind
+import Data.Kind (Type, Constraint)
 
 -------------------------------------------------------------------------------
 -- | Type family that maps constraint to it's first class representation -
@@ -15,4 +15,3 @@ type family Inst (c :: Constraint) = (t :: Type) | t -> c
 -- (see 'FCI.TH.mkInstRep'). Do not write these by hand, instead, create new
 -- instance of 'Inst' mapping to separate datatype when working on library.
 data family Dict :: Constraint -> Type
--- TODO: format of generated instance

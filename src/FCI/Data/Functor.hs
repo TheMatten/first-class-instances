@@ -23,7 +23,7 @@ fmapFunctor _fmap = Functor{
   }
 
 -------------------------------------------------------------------------------
--- | Creates 'Functor' instace for any type that can be "'coerce'd out".
+-- | Creates 'Functor' instance for any type that can be "'coerce'd out".
 coerceFunctor :: forall f. Newtype f => Inst (Functor f)
 coerceFunctor = Functor{
     _fmap = coerce

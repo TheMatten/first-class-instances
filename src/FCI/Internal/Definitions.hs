@@ -10,7 +10,8 @@ module FCI.Internal.Definitions (
   , Newtype
   ) where
 
-import GHC.Exts
+import Data.Coerce (Coercible)
+import GHC.Exts    (unsafeCoerce#)
 
 import qualified FCI.Internal.Types as Internal (Inst, Dict)
 
@@ -21,7 +22,7 @@ infixr 1 :=>
 -------------------------------------------------------------------------------
 -- | Type that maps constraint to it's representation. You can get hold of
 -- representation of some special constraints and classes that use
--- 'FCI.Internal.TH.mkInst'.
+-- 'FCI.mkInst'.
 --
 -- For example:
 --
@@ -44,16 +45,16 @@ infixr 1 :=>
 --   }
 -- @
 --
--- You can get hold of representation of global instance using 'inst'. You are
--- free to modify and read it and you can use ('==>') to apply it as constraint
--- in context of some subexpression. See 'FCI.Internal.TH.mkInst' for more info
+-- You can get hold of representation of global instance using 'FCI.inst'. You
+-- are free to modify and read it and you can use ('FCI.==>') to apply it as
+-- constraint in context of some subexpression. See 'FCI.mkInst' for more info
 -- about format of generated representation.
 type Inst c = Internal.Inst c
 
 -------------------------------------------------------------------------------
 -- | Type of representation of class instance. You can get instance for your
--- class using 'FCI.Internal.TH.mkInst' and access value of global instance
--- using 'inst'. Prefer 'Inst' in signatures when working with constraint
+-- class using 'FCI.mkInst' and access value of global instance using
+-- 'FCI.inst'. Prefer 'FCI.Inst' in signatures when working with constraint
 -- representations.
 type Dict = Internal.Dict
 
@@ -70,7 +71,11 @@ inst = case unsafeCoerce# id :: c :=> Inst c of Wants d -> d
 -- | /Reifies/ first class instance into constraint in context of supplied
 -- continuation.
 --
--- TODO: example
+-- For example:
+--
+-- >>> newtype Foo a = Foo a deriving Show
+-- >>> coerceFunctor @Foo ==> (+1) <$> Foo 1
+-- Foo 2
 (==>) :: forall c r. Inst c -> (c => r) -> r
 d ==> x = unsafeCoerce# (Wants @c @r x) d
 
@@ -81,5 +86,6 @@ newtype c :=> r where
   Wants :: (c => r) -> c :=> r
 
 -------------------------------------------------------------------------------
--- | Allows to 'coerce' type back and forth between it's argument when safe.
+-- | Allows to 'Data.Coerce.coerce' type back and forth between it's argument
+-- when safe.
 type Newtype f = forall a. (Coercible a (f a), Coercible (f a) a)
