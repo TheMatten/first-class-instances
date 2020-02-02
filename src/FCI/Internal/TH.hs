@@ -2,11 +2,14 @@
 
 module FCI.Internal.TH (
     mkInst
+  , mkInstWithOptions
   , unsafeMkInst
   , getClassDictInfo
   , ClassDictInfo (..)
   , ClassDictField (..)
   , dictInst
+  , MkInstOptions (..)
+  , defaultOptions
   ) where
 
 import           Control.Monad
@@ -29,7 +32,10 @@ import FCI.Internal.Types (Inst, Dict)
 --
 -- TODO: example, format
 mkInst :: Name -> Q [Dec]
-mkInst name = checkSafeInst name *> unsafeMkInst name
+mkInst = mkInstWithOptions defaultOptions
+
+mkInstWithOptions :: MkInstOptions -> Name -> Q [Dec]
+mkInstWithOptions opts name = checkSafeInst name *> unsafeMkInst opts name
 
 -------------------------------------------------------------------------------
 -- | Checks that it is save to create 'Inst' instance for given name.
@@ -46,20 +52,21 @@ checkSafeInst name = do
 -------------------------------------------------------------------------------
 -- | Version of 'mkInst' without any checks. You shouldn't use it unless you're
 -- working on this library.
-unsafeMkInst :: Name -> Q [Dec]
-unsafeMkInst = fmap dictInst . getClassDictInfo
+unsafeMkInst :: MkInstOptions -> Name -> Q [Dec]
+unsafeMkInst opts = fmap dictInst . getClassDictInfo opts
 
 -------------------------------------------------------------------------------
 -- | Constructs info about class dictionary represenation being created.
-getClassDictInfo :: Name -> Q ClassDictInfo
-getClassDictInfo className = reify className >>= \case
+getClassDictInfo :: MkInstOptions -> Name -> Q ClassDictInfo
+getClassDictInfo opts className = reify className >>= \case
   ClassI (ClassD constraints _ args _ methods) _ -> do
-    dictConName <- dictConFromClassName className
+    let dictConName = liftName (mkInstClassConName opts) className
     pure CDI{
         className
       , dictTyArg   = foldl1' AppT $ ConT className : map bndrToType args
       , dictConName
-      , dictFields  = mapMaybe methodFieldFromDec methods
+      , dictFields  = superFieldsFromCxt opts constraints
+                   ++ mapMaybe (methodFieldFromDec opts) methods
       , dictConstraints = constraints
       }
   _ -> fail $ '\'' : nameBase className ++ "' is not a class"
@@ -71,18 +78,21 @@ getClassDictInfo className = reify className >>= \case
 -- * Prefix names ('Show', 'Applicative') are kept as-is
 -- * Operators (('~')) are prefixed with colon @:@
 -- * Tuples are not supported (they have custom 'Inst' instances)
-dictConFromClassName :: Name -> Q Name
-dictConFromClassName (nameBase -> name@(c : _)) = mkName <$> if
-  | isAlpha_ c -> pure name
-  | c == '('   -> fail $ "Attempt to use restricted class '" ++ name ++ "'"
-  | otherwise  -> pure $ ':':name
+dictConFromClassName :: String -> String
+dictConFromClassName (name@(c : _)) = if
+  | isAlpha_ c -> name
+  | c == '('   -> error $ "Attempt to use restricted class '" ++ name ++ "'"
+  | otherwise  -> ':':name
 dictConFromClassName _ = error "dictConFromClassName: empty 'Name'"
+
+liftName :: (String -> String) -> Name -> Name
+liftName f = mkName . f . nameBase
 
 -------------------------------------------------------------------------------
 -- | Creates class dictionary representation fields from constraints that carry
 -- runtime proof, preserving order.
-superFieldsFromCxt :: [Pred] -> [ClassDictField]
-superFieldsFromCxt constraints = runST do
+superFieldsFromCxt :: MkInstOptions -> [Pred] -> [ClassDictField]
+superFieldsFromCxt opts constraints = runST do
   counts <- newSTRef M.empty
   sequence $ mapMaybe (fmap . mkSuperField counts <*> appHeadName) constraints
  where
@@ -90,7 +100,7 @@ superFieldsFromCxt constraints = runST do
     count <- maybe 0 id . M.lookup n <$> readSTRef counts
     modifySTRef counts $ M.alter (maybe (Just 1) $ Just . (+1)) n
     pure CDF{
-        fieldName   = fieldFromClassName n count
+        fieldName   = liftName (mkInstSuperClassFieldName opts count) n
       , fieldSource = Superclass
       , origName    = n
       , origType    = c
@@ -108,8 +118,8 @@ superFieldsFromCxt constraints = runST do
 --
 -- * Prefix names and names of tuples get numeric suffixes in order
 -- * Operators are suffixed with increasing number of @|@
-fieldFromClassName :: Name -> Int -> Name
-fieldFromClassName (nameBase -> name@(c:_)) count = mkName if
+fieldFromClassName :: Int -> String -> String
+fieldFromClassName count (name@(c:_)) = if
   | isAlpha_ c -> "_"  ++ name     ++ index
   | c == '('   ->         "_Tuple" ++ index
   | otherwise  -> "||" ++ name     ++ replicate count '|'
@@ -158,10 +168,10 @@ appHeadName = \case
 -------------------------------------------------------------------------------
 -- | Creates class dictionary representation field from class member of returns
 -- 'Nothing'.
-methodFieldFromDec :: Dec -> Maybe ClassDictField
-methodFieldFromDec = \case
+methodFieldFromDec :: MkInstOptions -> Dec -> Maybe ClassDictField
+methodFieldFromDec opts = \case
   SigD n (ForallT _ _ t) -> Just CDF{
-      fieldName   = fieldFromMethodName n
+      fieldName   = liftName (mkInstMethodFieldName opts) n
     , fieldSource = Method
     , origName    = n
     , origType    = t
@@ -174,8 +184,8 @@ methodFieldFromDec = \case
 --
 -- * Prefix names ('show', 'pure') are prefixed with @_@
 -- * Operators (('<*>'), ('>>=')) are prefixed with @|@
-fieldFromMethodName :: Name -> Name
-fieldFromMethodName (nameBase -> name@(c:_)) = mkName if
+fieldFromMethodName :: String -> String
+fieldFromMethodName (name@(c:_)) = if
   | isAlpha_ c -> '_':name
   | otherwise  -> '|':name
 fieldFromMethodName _ = error "fieldFromMethodName: empty 'Name'"
@@ -228,6 +238,20 @@ data ClassDictField = CDF{
 -------------------------------------------------------------------------------
 -- | Source of field in class dictionary.
 data ClassDictFieldSource = Superclass | Method deriving Show
+
+
+data MkInstOptions = MkInstOptions
+  { mkInstClassConName        :: String -> String
+  , mkInstSuperClassFieldName :: Int -> String -> String
+  , mkInstMethodFieldName     :: String -> String
+  }
+
+defaultOptions :: MkInstOptions
+defaultOptions = MkInstOptions
+  { mkInstClassConName        = dictConFromClassName
+  , mkInstSuperClassFieldName = fieldFromClassName
+  , mkInstMethodFieldName     = fieldFromMethodName
+  }
 
 -------------------------------------------------------------------------------
 -- | Checks if character is part of alphabet or underscore.
