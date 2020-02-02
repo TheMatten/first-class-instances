@@ -8,10 +8,13 @@ module Mockable
   ( Mockable ()
   , runMocked
   , runUnmocked
-  , Inst
+  , Dict
   , CaptureInst ()
+  , makeMockable
+  , mkMockableDict
   ) where
 
 import FCI
 import MockableImpl
+import MyTH
 

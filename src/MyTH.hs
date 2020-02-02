@@ -3,7 +3,6 @@
 
 module MyTH
   ( makeMockable
-  , Generic
   , mkMockableDict
   , Dict
   ) where
@@ -325,8 +324,7 @@ makeHasDictInstForField tycon_name vars con_name ts =
 isDict :: Type -> Bool
 isDict t
   | removeTyAnns t == ConT ''Dict = True
-  | removeTyAnns t == ConT ''Inst = True
-  | otherwise                      = False
+  | otherwise                     = False
 
 hasDictInst
     :: Name

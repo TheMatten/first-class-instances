@@ -21,7 +21,7 @@ unsafeMkInst defaultOptions ''Monad
 -- | Creates 'Monad' instance from @bind@ ('>>=') definition.
 bindMonad :: (forall a. a -> m a)                   -- ^ return
           -> (forall a b. m a -> (a -> m b) -> m b) -- ^ bind
-          -> Inst (Monad m)
+          -> Dict (Monad m)
 bindMonad _return (|>>=) = Monad{
     _Applicative = applyApplicative _return \mf ma ->
                      mf |>>= \f -> ma |>>= \a -> _return $ f a
@@ -36,7 +36,7 @@ bindMonad _return (|>>=) = Monad{
 joinMonad :: (forall a b. (a -> b) -> m a -> m b) -- ^ fmap
           -> (forall a. a -> m a)                 -- ^ return
           -> (forall a. m (m a) -> m a)           -- ^ join
-          -> Inst (Monad m)
+          -> Dict (Monad m)
 joinMonad _fmap _return _join = Monad{
     _Applicative = applyApplicative _return \mf ma ->
                      _join $ _fmap (`_fmap` ma) mf
@@ -48,7 +48,7 @@ joinMonad _fmap _return _join = Monad{
 
 -------------------------------------------------------------------------------
 -- | Creates 'Monad' instance for any 'Coercible' type.
-coerceMonad :: forall m. Newtype m => Inst (Monad m)
+coerceMonad :: forall m. Newtype m => Dict (Monad m)
 coerceMonad = Monad{
     _Applicative = coerceApplicative
   , (|>>=)       = (coerce :: (a -> (a -> b) -> b) -> m a -> (a -> m b) -> m b)

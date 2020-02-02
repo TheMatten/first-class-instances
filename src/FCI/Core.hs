@@ -1,6 +1,5 @@
-module FCI.Core (
-    Inst
-  , Dict
+module FCI.Core
+  ( Dict
   , inst
   , (==>)
   ) where

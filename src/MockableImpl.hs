@@ -25,7 +25,7 @@ instance GCaptureInst U1 where
 instance (GCaptureInst f, GCaptureInst g) => GCaptureInst (f :*: g) where
   gcaptureInst = gcaptureInst :*: gcaptureInst
 
-instance (c, Inst c ~ Dict c) => GCaptureInst (K1 _1 (Dict c)) where
+instance c => GCaptureInst (K1 _1 (Dict c)) where
   gcaptureInst = K1 inst
 
 

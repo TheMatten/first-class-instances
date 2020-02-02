@@ -18,7 +18,19 @@ dependencies :
 - transformers
 - lens
 
-library : { source-dirs : src }
+library :
+  source-dirs : src
+  other-modules:
+    - FCI
+    - FCI.Control.Applicative
+    - FCI.Control.Monad
+    - FCI.Core
+    - FCI.Data.Functor
+    - FCI.Internal
+    - FCI.Internal.TH
+    - FCI.Internal.Types
+    - MockableImpl
+    - THStuff
 
 tests :
   first-class-instances-test :

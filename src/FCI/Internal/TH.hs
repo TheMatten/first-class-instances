@@ -24,7 +24,7 @@ import           Data.STRef
 import           Language.Haskell.TH
 import           Language.Haskell.TH.Syntax
 
-import FCI.Internal.Types (Inst, Dict)
+import FCI.Internal.Types (Dict)
 
 -------------------------------------------------------------------------------
 -- | Creates first class instance representation from based on class. To avoid
@@ -195,10 +195,8 @@ fieldFromMethodName _ = error "fieldFromMethodName: empty 'Name'"
 -------------------------------------------------------------------------------
 -- | Creates 'Dict' instance from info about class dictionary representation.
 dictInst :: ClassDictInfo -> [Dec]
-dictInst cdi = [
-    TySynInstD ''Inst $
-      TySynEqn [dictTyArg cdi] $ ConT ''Dict `AppT` dictTyArg cdi
-  , case classDictToRecField <$> dictFields cdi of
+dictInst cdi =
+  [ case classDictToRecField <$> dictFields cdi of
       []      -> mk DataInstD    [NormalC (dictConName cdi) []     ]
       [field] -> mk NewtypeInstD (RecC    (dictConName cdi) [field])
       fields  -> mk DataInstD    [RecC    (dictConName cdi) fields ]
@@ -213,7 +211,7 @@ classDictToRecField cdf = (
     fieldName cdf
   , Bang NoSourceUnpackedness NoSourceStrictness
   , (case fieldSource cdf of
-      Superclass -> AppT $ ConT ''Inst
+      Superclass -> AppT $ ConT ''Dict
       Method     -> id
     ) $ origType cdf
   )

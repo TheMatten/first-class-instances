@@ -14,7 +14,6 @@
 
 module Ok where
 
-import MyTH
 import Mockable
 import Control.Monad.Trans.Writer
 
