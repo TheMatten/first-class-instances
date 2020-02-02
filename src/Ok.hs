@@ -23,22 +23,21 @@ class Monad m => MonadFoo s m | m -> s where
 makeMockable ''MonadFoo
 
 
-
 class Monad m => MonadBar m where
   bar :: Int -> m a -> m a
   baz :: m Int
 makeMockable ''MonadBar
 
--- class Monad m => MonadMask m where
---   mask :: ((m Int -> m a) -> (m a -> Int) -> m Int) -> m a
--- makeMockable ''MonadMask
+class Monad m => MonadCont m where
+  callCC :: ((a -> m b) -> m a) -> m a
+makeMockable ''MonadCont
 
--- -- doesn't work for MULTIPLE OF SAME SAME
 
-data AppDicts s m = AppDicts
-  { _appDictsMonadFoo :: Dict (MonadFoo s m)
-  , _appDictsMonadBar :: Dict (MonadBar m)
-  } deriving stock Generic
+data AppDicts s m =
+  AppDicts
+    (Dict (MonadFoo s m))
+    (Dict (MonadBar m))
+  deriving stock Generic
 
 mkMockableDict ''AppDicts
 

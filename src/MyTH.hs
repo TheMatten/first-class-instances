@@ -140,7 +140,7 @@ getClassName :: Name -> Name
 getClassName = overName ("Has" ++)
 
 getMethodName :: Name -> Name
-getMethodName = overName firstToLower
+getMethodName = overName (("get" ++) . (++ "Dict"))
 
 
 diddleArg :: Type -> Name -> Position -> (Exp, Type) -> Q Exp
@@ -306,15 +306,15 @@ mkMockableDict nm = do
     TyConI (DataD _ tycon_name vars _ [con] _) -> do
       case con of
         NormalC con_name (fmap snd -> ts) ->
-          janky tycon_name vars con_name ts
+          makeHasDictInstForField tycon_name vars con_name ts
         RecC    con_name (fmap thd -> ts) ->
-          janky tycon_name vars con_name ts
+          makeHasDictInstForField tycon_name vars con_name ts
         _ -> error "Only for normal constructors and records"
     _ -> error "Must call it on a dang Type!"
 
 
-janky :: Name -> [TyVarBndr] -> Name -> [Type] -> Q [Dec]
-janky tycon_name vars con_name ts =
+makeHasDictInstForField :: Name -> [TyVarBndr] -> Name -> [Type] -> Q [Dec]
+makeHasDictInstForField tycon_name vars con_name ts =
   for (zip ts [0..])
     . uncurry
     . hasDictInst tycon_name vars con_name
