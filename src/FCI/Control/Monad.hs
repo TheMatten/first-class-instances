@@ -15,7 +15,7 @@ import FCI.Control.Applicative as M
 import FCI.Internal
 
 -------------------------------------------------------------------------------
-unsafeMkInst ''Monad
+unsafeMkInst defaultOptions ''Monad
 
 -------------------------------------------------------------------------------
 -- | Creates 'Monad' instance from @bind@ ('>>=') definition.

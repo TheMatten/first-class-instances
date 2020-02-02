@@ -11,7 +11,7 @@ import Data.Coerce
 import FCI.Internal
 
 -------------------------------------------------------------------------------
-unsafeMkInst ''Functor
+unsafeMkInst defaultOptions ''Functor
 
 -------------------------------------------------------------------------------
 -- | Creates 'Functor' instance from mapping function.

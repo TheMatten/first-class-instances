@@ -35,7 +35,7 @@ tests :
 ghc-options :
 - -ferror-spans
 - -Wall
-- -Werror
+# - -Werror
 - -Wincomplete-uni-patterns
 - -Wincomplete-record-updates
 - -Wmissing-export-lists

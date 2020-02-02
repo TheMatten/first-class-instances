@@ -17,7 +17,7 @@ import Control.Lens.Internal.TH
 import Control.Monad
 import qualified Data.Set as Set
 import Data.Set (Set)
-import Mockable
+import MockableImpl
 import Control.Arrow ((>>>))
 import Control.Monad.Trans.Reader
 import Data.Traversable
@@ -40,13 +40,8 @@ makeMockable name = do
         makeFieldClass
           (getClassName class_name)
           (getMethodName class_name)
+    , makePatternSyn dict_info
     , fmap pure $ makeMockableInstance dict_info
-    , makePatternSyn
-        dict_info
-
-
-
-
     ]
 
 

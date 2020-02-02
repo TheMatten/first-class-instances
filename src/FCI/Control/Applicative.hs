@@ -14,7 +14,7 @@ import FCI.Data.Functor as M
 import FCI.Internal
 
 -------------------------------------------------------------------------------
-unsafeMkInst ''Applicative
+unsafeMkInst defaultOptions ''Applicative
 
 -------------------------------------------------------------------------------
 -- | Creates 'Applicative' instance from @apply@ ('<*>') definition.
