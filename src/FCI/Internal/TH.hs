@@ -10,6 +10,7 @@ module FCI.Internal.TH (
   , dictInst
   , MkInstOptions (..)
   , defaultOptions
+  , ClassDictFieldSource (..)
   ) where
 
 import           Control.Monad
@@ -237,7 +238,7 @@ data ClassDictField = CDF{
 
 -------------------------------------------------------------------------------
 -- | Source of field in class dictionary.
-data ClassDictFieldSource = Superclass | Method deriving Show
+data ClassDictFieldSource = Superclass | Method deriving (Eq, Show, Ord)
 
 
 data MkInstOptions = MkInstOptions
