@@ -1,5 +1,7 @@
 {-# language NoMonoLocalBinds, TemplateHaskell #-}
 
+-- | TH for dictionary representation generation. This module is internal and
+-- provides no guarantees about stability and safety of it's interface.
 module FCI.Internal.TH (
     mkInst
   , unsafeMkInst
@@ -21,19 +23,37 @@ import           Language.Haskell.TH.Syntax
 import FCI.Internal.Types (Inst, Dict)
 
 -------------------------------------------------------------------------------
--- | Creates first class instance representation from based on class. To avoid
--- possibly breaking assumptions author of class may have made about it's
--- instances, you can only create representation for class in current module.
+-- | Creates first class instance representation from based on class. Generated
+-- representation is record of class members following simple format:
 --
--- TODO: example, format
+-- * name of record constructor is name of original class
+--
+-- * superclass constraints are transformed into fields containing their
+--   representation, names of fields are generated this way:
+--
+--     * Prefix names ('Show', 'Applicative') are prefixed with @_@
+--     * Operators (('~')) are prefixed with @||@
+--     * Tuples are converted into prefix names "_Tuple"
+--     * Additional occurencies of same prefix name get postfix index starting
+--       from 1
+--     * Additional occurencies of same operator are postfixed with increasing
+--     number of @|@s
+--
+-- * methods get their own fields, names of fields are names of methods
+--   prefixed with @_@
+--
+-- To avoid possibly breaking assumptions author of class may have made about
+-- it's instances, you can only create representation for class in current
+-- module.
 mkInst :: Name -> Q [Dec]
 mkInst name = checkSafeInst name *> unsafeMkInst name
+-- TODO: example
 
 -------------------------------------------------------------------------------
 -- | Checks that it is save to create 'Inst' instance for given name.
 checkSafeInst :: Name -> Q ()
 checkSafeInst name = do
-  -- TODO
+  -- TODO: we may want to support them - plus, what already works with QC?
   isExtEnabled QuantifiedConstraints >>= flip when do
     fail "'QuantifiedConstraints' are not supported yet"
   Module _ (ModName this_module) <- thisModule
