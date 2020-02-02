@@ -300,12 +300,17 @@ mkMockableDict :: Name -> DecsQ
 mkMockableDict nm = do
   reify nm >>= \case
     TyConI (DataD _ tycon_name vars _ [con] _) -> do
-      case con of
-        NormalC con_name (fmap snd -> ts) ->
-          makeHasDictInstForField tycon_name vars con_name ts
-        RecC    con_name (fmap thd -> ts) ->
-          makeHasDictInstForField tycon_name vars con_name ts
-        _ -> error "Only for normal constructors and records"
+      z <-
+        case con of
+          NormalC con_name (fmap snd -> ts) ->
+            makeHasDictInstForField tycon_name vars con_name ts
+          RecC    con_name (fmap thd -> ts) ->
+            makeHasDictInstForField tycon_name vars con_name ts
+          _ -> error "Only for normal constructors and records"
+      pure
+        $ StandaloneDerivD (Just StockStrategy) []
+          (ConT ''Generic `AppT` (foldl AppT (ConT tycon_name) $ fmap (VarT . getBndrName) vars))
+        : z
     _ -> error "Must call it on a dang Type!"
 
 
