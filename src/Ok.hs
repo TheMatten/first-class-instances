@@ -17,7 +17,6 @@ import MyTH
 import Mockable
 import App
 
-import FCI.Internal
 import Control.Monad.Trans.Writer
 
 
@@ -40,10 +39,7 @@ test =
     , _foo = pure 5
     }
 
-data Lame m = Lame (Dict (MonadFoo Int m))
-mkMockableDict ''Lame
-
-ok = runWriter . runMocked (Lame test) $ do
+ok = runWriter . runMocked test $ do
   s <- foo
   faz s
   faz 10

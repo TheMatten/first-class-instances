@@ -241,7 +241,7 @@ makeMockableInstance cdi = do
   pure
     $ InstanceD
         Nothing
-        ( foldl AppT (ConT (getClassName class_name)) (args ++ [m_type, VarT dict_name `AppT` m_type])
+        ( foldl AppT (ConT (getClassName class_name)) (args ++ [m_type, VarT dict_name])
         : dictConstraints cdi
         ) (class_ctr `AppT` (ConT ''Mockable `AppT` VarT dict_name `AppT` m_type))
     $ join methods

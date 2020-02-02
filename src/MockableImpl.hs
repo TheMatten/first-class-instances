@@ -36,21 +36,21 @@ captureInst :: CaptureInst d => d
 captureInst = to gcaptureInst
 
 
-coerceMockable :: Mockable dict m a -> dict m -> m a
+coerceMockable :: Mockable dict m a -> dict -> m a
 coerceMockable = coerce
 
 
 
-newtype Mockable dict m a = Mockable (ReaderT (dict m) m a)
+newtype Mockable dict m a = Mockable (ReaderT dict m a)
   deriving newtype (Functor, Applicative, Monad)
 
 instance MonadTrans (Mockable dict) where
   lift = Mockable . lift
 
 
-runMocked :: dict m -> Mockable dict m a -> m a
+runMocked :: dict -> Mockable dict m a -> m a
 runMocked dict (Mockable r) = runReaderT r dict
 
-runUnmocked :: CaptureInst (dict m) => Mockable dict m a -> m a
+runUnmocked :: CaptureInst dict => Mockable dict m a -> m a
 runUnmocked (Mockable r) = runReaderT r captureInst
 
