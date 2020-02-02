@@ -13,15 +13,15 @@
 
 module Ok where
 
-import Control.Lens
-import           MyTH
+import MyTH
 import Mockable
 import App
 
 
-class Monad m => MonadFoo s m where
+class Monad m => MonadFoo s m | m -> s where
   foo :: m s
 makeMockable ''MonadFoo
+
 
 
 class Monad m => MonadBar m where
@@ -29,17 +29,18 @@ class Monad m => MonadBar m where
   baz :: m Int
 makeMockable ''MonadBar
 
-class Monad m => MonadMask m where
-  mask :: ((m Int -> m a) -> (m a -> Int) -> m Int) -> m a
-makeMockable ''MonadMask
+-- class Monad m => MonadMask m where
+--   mask :: ((m Int -> m a) -> (m a -> Int) -> m Int) -> m a
+-- makeMockable ''MonadMask
 
--- doesn't work for MULTIPLE OF SAME SAME
+-- -- doesn't work for MULTIPLE OF SAME SAME
 
-data AppDicts m = AppDicts
-  { _appDictsMonadFoo :: Inst (MonadFoo Int m)
-  , _appDictsMonadBar :: Inst (MonadBar m)
+data AppDicts s m = AppDicts
+  { _appDictsMonadFoo :: Dict (MonadFoo s m)
+  , _appDictsMonadBar :: Dict (MonadBar m)
   } deriving stock Generic
-makeFields ''AppDicts
+
+mkMockableDict ''AppDicts
 
 
 myBusinessLogic :: (MonadFoo Int m, MonadBar m) => m Int
@@ -49,20 +50,11 @@ myBusinessLogic =
     y <- baz
     pure $ x + y
 
-myMockedBusinessLogic :: Monad m => Mockable AppDicts m Int
-myMockedBusinessLogic = myBusinessLogic
-
 tested :: Monad m => m Int
-tested = runMocked mocks myMockedBusinessLogic
+tested = runMocked mocks myBusinessLogic
   where
     mocks =
       AppDicts
         (MonadFoo (pure 5))
         (MonadBar (const id) (pure 7))
-
-myUnmockedBusinessLogic :: (MonadFoo Int m, MonadBar m) => m Int
-myUnmockedBusinessLogic = runUnmocked myMockedBusinessLogic
-
--- zop :: IO ()
--- zop = runApp $ pure ()
 

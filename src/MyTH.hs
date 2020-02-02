@@ -1,28 +1,24 @@
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE PatternSynonyms               #-}
+{-# LANGUAGE TemplateHaskell               #-}
 
 module MyTH
   ( makeMockable
-  , makeFields
   , Generic
+  , mkMockableDict
+  , Dict
   ) where
 
-import FCI.Internal
-import Data.Char
-import Control.Lens
-import Language.Haskell.TH hiding (cxt)
-import Language.Haskell.TH.Lens hiding (name)
-import Data.List
-import Control.Lens.Internal.TH
 import Control.Monad
-import qualified Data.Set as Set
-import Data.Set (Set)
-import MockableImpl
-import Control.Arrow ((>>>))
-import Control.Monad.Trans.Reader
-import Data.Traversable
-import GHC.Generics hiding (to)
 import Control.Monad.Trans.Class
+import Control.Monad.Trans.Reader
+import Data.Char
+import Data.Maybe
+import Data.Traversable
+import FCI.Internal
+import GHC.Generics hiding (to)
+import Language.Haskell.TH hiding (cxt)
+import MockableImpl
+import THStuff
 
 
 makeMockable :: Name -> Q [Dec]
@@ -36,11 +32,14 @@ makeMockable name = do
 
   fmap join $ sequenceA
     [ mkInstWithOptions opts name
-    , fmap pure $
-        makeFieldClass
+    , makePatternSyn dict_info
+    -- , fmap pure $
+    --     makeFieldClass
+    --       (getClassName class_name)
+    --       (getMethodName class_name)
+    , makeBetterFieldClass dict_info
           (getClassName class_name)
           (getMethodName class_name)
-    , makePatternSyn dict_info
     , fmap pure $ makeMockableInstance dict_info
     ]
 
@@ -72,30 +71,66 @@ makePatternSyn cdi = do
     ]
 
 
-makeFieldClass :: Name -> Name -> DecQ
-makeFieldClass className methodName =
-  classD (pure []) className [PlainTV s, PlainTV a] [FunDep [s] [a]]
-         [sigD methodName (return methodType)]
-  where
-  methodType = quantifyType' (Set.fromList [s,a])
-                             []
-             $ ''Lens' `conAppsT` [VarT s,VarT a]
-  s = mkName "s"
-  a = mkName "a"
+makeBetterFieldClass :: ClassDictInfo -> Name -> Name -> DecsQ
+makeBetterFieldClass cdi class_name method_name = do
+  a_name <- newName "a"
+  let cs = getClassStuff cdi
+  Just m_name <- pure $ getTyVar $ csMType cs
+  let vars = mapMaybe getTyVar (csArgs cs <> [csMType cs])
+      fundeps = (FunDep [a_name] [m_name] :)
+              . fmap (installANameIfNecessary m_name a_name)
+              $ dictFundeps cdi
+  pure
+    [ ClassD [] class_name (fmap PlainTV $ vars <> [a_name]) fundeps
+        . pure
+        . SigD method_name
+        $ VarT a_name :-> csInstType cs
+    , makeBetterFieldInstance
+        class_name
+        (fmap VarT vars)
+        (csInstType cs)
+        method_name
+        []
+        (VarE 'id)
+    ]
 
 
--- | This function works like 'quantifyType' except that it takes
--- a list of variables to exclude from quantification.
-quantifyType' :: Set Name -> Cxt -> Type -> Type
-quantifyType' exclude c t = ForallT vs c t
-  where
-  vs = map PlainTV
-     $ filter (`Set.notMember` exclude)
-     $ nub -- stable order
-     $ toListOf typeVars t
+makeBetterFieldInstance
+    :: Name
+    -> [Type]
+    -> Type
+    -> Name
+    -> [Pat]
+    -> Exp
+    -> Dec
+makeBetterFieldInstance class_name args inst_ty method_name pats expr =
+  InstanceD
+      Nothing
+      []
+      (foldl AppT (ConT class_name) $ args ++ [inst_ty])
+    [ FunD method_name
+        . pure
+        $ Clause pats (NormalB expr) []
+    , PragmaD $ InlineP method_name Inlinable ConLike AllPhases
+    ]
 
-overName :: (String -> String) -> Name -> Name
-overName f = mkName . f . nameBase
+
+installANameIfNecessary :: Name -> Name -> FunDep -> FunDep
+installANameIfNecessary m_name a_name fundep@(FunDep lhs rhs)
+  | elem m_name lhs = FunDep (a_name : lhs) rhs
+  | otherwise       = fundep
+
+
+getTyVar :: Type -> Maybe Name
+getTyVar (removeTyAnns -> VarT n) = Just n
+getTyVar _                        = Nothing
+
+
+-- class HasMonadFoo2 s m a | a m -> s where
+--   getMonadFoo :: a -> Inst (MonadFoo s m)
+
+
+
 
 firstToLower :: String -> String
 firstToLower [] = []
@@ -139,13 +174,15 @@ liftCorrectPosition _ Positive arg =
 -- @r_name ^. dict_name . to field_name@
 makeHasDictLookup :: Name -> Name -> Name -> Exp
 makeHasDictLookup r_name dict_name field_name =
-  foldl AppE (VarE 'view)
-    [ InfixE
-        (Just $ VarE dict_name)
-        (VarE '(.))
-        (Just $ VarE 'to `AppE` VarE field_name)
-    , VarE r_name
-    ]
+  VarE field_name `AppE` (VarE dict_name `AppE` VarE r_name)
+
+--   foldl AppE (VarE 'view)
+--     [ InfixE
+--         (Just $ VarE dict_name)
+--         (VarE '(.))
+--         (Just $ VarE 'to `AppE` VarE field_name)
+--     , VarE r_name
+--     ]
 
 
 ------------------------------------------------------------------------------
@@ -188,96 +225,55 @@ makeLiftedMethod m_type dict_name method_name field_name arg_types = do
     ]
 
 
-------------------------------------------------------------------------------
--- | Given:
-
--- @@
--- class Monad m => MonadState s m | m -> s where
---   get :: m s
---   put :: s -> m ()
--- makeMockable ''MonadState
--- @@
---
--- generate the following:
---
--- @@
--- instance ( HasMonadState (dict m) (Inst (MonadState s m))
---          , Monad m
---          ) =>
---       MonadState s (Mockable dict m) where
---   get
---     = Mockable
---         (ReaderT
---            (\ r_a3DNQ -> ((^.) r_a3DNQ) (((.) monadState) (to _get))))
---   {-# INLINABLE get #-}
---
---   put x_a3DNR
---     = Mockable
---         (ReaderT
---            (\ r_a3DNS
---               -> (((^.) r_a3DNS) (((.) monadState) (to _put))) x_a3DNR))
---   {-# INLINABLE put #-}
--- @@
 makeMockableInstance :: ClassDictInfo -> Q Dec
 makeMockableInstance cdi = do
   dict_name <- newName "dict"
+  let ClassStuff m_type class_ctr _ args = getClassStuff cdi
   let class_name = className cdi
-      class_vars = splitAppTs $ dictTyArg cdi
-      vars_to_keep = drop 1 $ init class_vars
-      m_type = removeSig $ last class_vars
-      class_ctr = foldl AppT (ConT class_name) vars_to_keep
       okname = getMethodName class_name
 
-  methods <- for (filter isMethodField $ dictFields cdi) $ \fi -> do
-    makeLiftedMethod m_type okname (origName fi) (fieldName fi) $ init $ splitArrowTs $ origType fi
+  methods <- for (filter isMethodField $ dictFields cdi) $ \fi ->
+    makeLiftedMethod
+          m_type
+          okname
+          (origName fi)
+          (fieldName fi)
+      . init
+      . splitArrowTs
+      $ origType fi
 
   pure
     $ InstanceD
         Nothing
-        ( ConT (getClassName class_name)
-            `AppT` (VarT dict_name `AppT` m_type)
-            `AppT` getInstType cdi
+        ( foldl AppT (ConT (getClassName class_name)) (args ++ [m_type, VarT dict_name `AppT` m_type])
         : dictConstraints cdi
-        ) (class_ctr `AppT` (ConT ''Mockable `AppT` VarT dict_name `AppT` m_type)) $ join methods
+        ) (class_ctr `AppT` (ConT ''Mockable `AppT` VarT dict_name `AppT` m_type))
+    $ join methods
+
+data ClassStuff = ClassStuff
+  { csMType       :: Type
+  , csClassTyCtor :: Type
+  , csInstType    :: Type
+  , csArgs        :: [Type]
+  }
+
+getClassStuff :: ClassDictInfo -> ClassStuff
+getClassStuff cdi =
+  let class_name = className cdi
+      class_vars = drop 1 $ splitAppTs $ dictTyArg cdi
+      vars_to_keep = init class_vars
+      m_type = removeSig $ last class_vars
+      class_ctr = foldl AppT (ConT class_name) vars_to_keep
+      inst_type = ConT ''Dict `AppT` (class_ctr `AppT` m_type)
+   in ClassStuff m_type class_ctr inst_type vars_to_keep
 
 
 getInstType :: ClassDictInfo -> Type
-getInstType cdi =
-  let class_name = className cdi
-      class_vars = splitAppTs $ dictTyArg cdi
-      vars_to_keep = drop 1 $ init class_vars
-      m_type = removeSig $ last class_vars
-      class_ctr = foldl AppT (ConT class_name) vars_to_keep
-   in ConT ''Inst `AppT` (class_ctr `AppT` m_type)
+getInstType = csInstType . getClassStuff
 
 
 isMethodField :: ClassDictField -> Bool
 isMethodField = (== Method) . fieldSource
-
-------------------------------------------------------------------------------
-removeTyAnns :: Type -> Type
-removeTyAnns = \case
-  ForallT _ _ t -> removeTyAnns t
-  SigT t _      -> removeTyAnns t
-  ParensT t     -> removeTyAnns t
-  t -> t
-
-------------------------------------------------------------------------------
-splitAppTs :: Type -> [Type]
-splitAppTs = removeTyAnns >>> \case
-  t `AppT` arg -> splitAppTs t ++ [arg]
-  t            -> [t]
-
-------------------------------------------------------------------------------
-splitArrowTs :: Type -> [Type]
-splitArrowTs = removeTyAnns >>> \case
-  t :-> ts -> t : splitArrowTs ts
-  t        -> [t]
-
-
-removeSig :: Type -> Type
-removeSig (SigT t _) = t
-removeSig t = t
 
 
 data Position
@@ -303,11 +299,66 @@ classifyArg m_type arg_type
   | otherwise = Boring
 
 
-pattern (:->) :: Type -> Type -> Type
-pattern t :-> ts <- AppT (AppT ArrowT t) ts
-  where
-    t :-> ts = AppT (AppT ArrowT t) ts
+
+mkMockableDict :: Name -> DecsQ
+mkMockableDict nm = do
+  reify nm >>= \case
+    TyConI (DataD _ tycon_name vars _ [con] _) -> do
+      case con of
+        NormalC con_name (fmap snd -> ts) ->
+          janky tycon_name vars con_name ts
+        RecC    con_name (fmap thd -> ts) ->
+          janky tycon_name vars con_name ts
+        _ -> error "Only for normal constructors and records"
+    _ -> error "Must call it on a dang Type!"
 
 
+janky :: Name -> [TyVarBndr] -> Name -> [Type] -> Q [Dec]
+janky tycon_name vars con_name ts =
+  for (zip ts [0..])
+    . uncurry
+    . hasDictInst tycon_name vars con_name
+    $ length ts
 
+
+isDict :: Type -> Bool
+isDict t
+  | removeTyAnns t == ConT ''Dict = True
+  | removeTyAnns t == ConT ''Inst = True
+  | otherwise                      = False
+
+hasDictInst
+    :: Name
+    -> [TyVarBndr]
+    -> Name
+    -> Int
+    -> Type
+    -> Int
+    -> DecQ
+hasDictInst tycon_name bndrs con_name num t idx = do
+  field <- newName "x"
+  let pats =
+        flip fmap [0..num - 1] $ \n ->
+          case n == idx of
+            True -> VarP field
+            False -> WildP
+
+
+  let apps = splitAppTs t
+  case apps of
+    [dict, c] | isDict dict -> do
+      (ConT class_name : args) <- pure $ splitAppTs c
+      pure $
+        makeBetterFieldInstance
+          (getClassName class_name)
+          args
+          (foldl AppT (ConT tycon_name) $ fmap (VarT . getBndrName) bndrs)
+          (getMethodName class_name)
+          [ConP con_name pats]
+          (VarE field)
+    _ -> error "shit"
+
+
+thd :: (a, b, c) -> c
+thd (_, _, c) = c
 

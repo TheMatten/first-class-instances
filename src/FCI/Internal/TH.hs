@@ -60,7 +60,7 @@ unsafeMkInst opts = fmap dictInst . getClassDictInfo opts
 -- | Constructs info about class dictionary represenation being created.
 getClassDictInfo :: MkInstOptions -> Name -> Q ClassDictInfo
 getClassDictInfo opts className = reify className >>= \case
-  ClassI (ClassD constraints _ args _ methods) _ -> do
+  ClassI (ClassD constraints _ args deps methods) _ -> do
     let dictConName = liftName (mkInstClassConName opts) className
     pure CDI{
         className
@@ -69,6 +69,7 @@ getClassDictInfo opts className = reify className >>= \case
       , dictFields  = superFieldsFromCxt opts constraints
                    ++ mapMaybe (methodFieldFromDec opts) methods
       , dictConstraints = constraints
+      , dictFundeps = deps
       }
   _ -> fail $ '\'' : nameBase className ++ "' is not a class"
 
@@ -225,6 +226,7 @@ data ClassDictInfo = CDI{
   , dictConName :: Name
   , dictFields  :: [ClassDictField]
   , dictConstraints :: Cxt
+  , dictFundeps :: [FunDep]
   } deriving Show
 
 -------------------------------------------------------------------------------
