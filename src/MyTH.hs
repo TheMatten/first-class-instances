@@ -26,6 +26,7 @@ makeMockable name = do
   let opts =
         defaultOptions
           { mkInstClassConName = (++ "Impl") . mkInstClassConName defaultOptions
+          , mkInstMethodFieldName = ('_' :) . mkInstMethodFieldName defaultOptions
           }
   dict_info <- getClassDictInfo opts name
   let class_name = className dict_info
@@ -33,10 +34,6 @@ makeMockable name = do
   fmap join $ sequenceA
     [ mkInstWithOptions opts name
     , makePatternSyn dict_info
-    -- , fmap pure $
-    --     makeFieldClass
-    --       (getClassName class_name)
-    --       (getMethodName class_name)
     , makeBetterFieldClass dict_info
           (getClassName class_name)
           (getMethodName class_name)
@@ -50,17 +47,16 @@ makePatternSyn cdi = do
       dcon_name    = dictConName cdi
       pattern_name = overName (reverse . drop 4 . reverse) $ dictConName cdi
       fields       = dictFields cdi
-  bndr_names <- for (filter isMethodField fields) $ const $ newName "x"
+  let bndr_names = flip fmap (filter isMethodField fields) $ overName (drop 1) . fieldName
   let bndrs = fmap VarP bndr_names
       pats  = fmap (const WildP) (filter (not . isMethodField) fields)
            <> bndrs
       args = fmap (const $ VarE 'inst) (filter (not . isMethodField) fields)
           <> fmap VarE bndr_names
-
   pure
     [ PatSynD
         pattern_name
-        (PrefixPatSyn bndr_names)
+        (RecordPatSyn bndr_names)
         (ExplBidir [Clause bndrs (NormalB $ foldl AppE (ConE dcon_name) args) []])
         (ConP dcon_name pats)
     , PatSynSigD pattern_name
@@ -73,7 +69,7 @@ makePatternSyn cdi = do
 
 makeBetterFieldClass :: ClassDictInfo -> Name -> Name -> DecsQ
 makeBetterFieldClass cdi class_name method_name = do
-  a_name <- newName "a"
+  a_name <- newName "env"
   let cs = getClassStuff cdi
   Just m_name <- pure $ getTyVar $ csMType cs
   let vars = mapMaybe getTyVar (csArgs cs <> [csMType cs])
