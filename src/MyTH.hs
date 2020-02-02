@@ -107,12 +107,12 @@ liftCorrectPosition _ Positive arg =
 -- @r_name ^. dict_name . to field_name@
 makeHasDictLookup :: Name -> Name -> Name -> Exp
 makeHasDictLookup r_name dict_name field_name =
-  foldl AppE (VarE '(^.))
-    [ VarE r_name
-    , foldl AppE (VarE '(.))
-        [ VarE dict_name
-        , VarE 'to `AppE` VarE field_name
-        ]
+  foldl AppE (VarE 'view)
+    [ InfixE
+        (Just $ VarE dict_name)
+        (VarE '(.))
+        (Just $ VarE 'to `AppE` VarE field_name)
+    , VarE r_name
     ]
 
 
