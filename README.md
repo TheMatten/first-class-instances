@@ -9,6 +9,13 @@ compiler just wouldn't let you to use these things because of overlapping and st
 Well, now you can!:
 
 ```hs
+{-# LANGUAGE TemplateHaskell, TypeFamilies, NoQuantifiedConstraints #-}
+module Main where
+
+import Prelude hiding (read)
+
+import FCI
+
 class Monad m => Teletype m where
   read  :: m String
   write :: String -> m ()
@@ -33,3 +40,4 @@ using ordinary Haskell code and then promote into global ones using TH (TODO).
 
 This library is still experimental, so please do not use it for serious things,
 but I welcome you to try it out and give some feedback!
+
