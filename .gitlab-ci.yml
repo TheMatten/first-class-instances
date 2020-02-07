@@ -1,7 +1,7 @@
 image         : haskell
-variables     : { STACK_ROOT : /builds/.stack }
+variables     : { STACK_ROOT : /build/.stack }
 before_script : [stack setup]
 
 test          :
   script : [stack test]
-  cache  : { paths : [/builds/.stack, .stack-work] }
+  cache  : { paths : [/build/.stack, .stack-work] }
