@@ -1,4 +1,4 @@
 image: haskell
 
-build : { script : [stack build] }
+setup : { script : [stack setup] }
 test  : { script : [stack test ] }
