@@ -1,0 +1,6 @@
+image     : haskell
+variables : { STACK_ROOT : "${CI_PROJECT_DIR}/.stack-root" }
+
+test      :
+  script : [stack setup, stack test]
+  cache  : { paths : [.stack-root, .stack-work] }
