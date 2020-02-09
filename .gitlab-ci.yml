@@ -1,6 +1,18 @@
-image     : haskell
+# We move stack root to project directory to allow caching
 variables : { STACK_ROOT : "${CI_PROJECT_DIR}/.stack-root" }
+cache     : { paths      : [.stack-root, .stack-work]      }
 
-test      :
-  script : [stack setup, stack test]
-  cache  : { paths : [.stack-root, .stack-work] }
+# Official "haskell" images have version of GHC preinstalled
+before_script :
+- alias stack="stack --system-ghc"
+- stack setup
+
+8.6.5 :
+  image  : haskell:8.6.5
+  script : [stack test]
+  cache  : { key : 8.6.5 }
+
+8.8.1 :
+  image  : haskell:8.8.1
+  script : [stack test]
+  cache  : { key : 8.8.1 }
