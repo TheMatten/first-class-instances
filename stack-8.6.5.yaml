@@ -1,2 +1,2 @@
-resolver : lts-14.24
+resolver : lts-14.23
 packages : [.]
