@@ -7,7 +7,7 @@ cache     : { paths      : [.stack-root, .stack-work]      }
   script : [stack --system-ghc --stack-yaml=stack-8.6.5.yaml test]
   cache  : { key : 8.6.5 }
 
-8.8.2 :
-  image  : haskell:8.8.2
-  script : [stack --system-ghc --stack-yaml=stack-8.8.2.yaml test]
-  cache  : { key : 8.8.2 }
+8.8.1 :
+  image  : haskell:8.8.1
+  script : [stack --system-ghc --stack-yaml=stack-8.8.1.yaml test]
+  cache  : { key : 8.8.1 }
