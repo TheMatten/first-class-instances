@@ -1,3 +1,5 @@
 .stack-work/
 first-class-instances.cabal
+stack.yaml
+stack.yaml.lock
 *~

@@ -1,6 +1,6 @@
-# first-class-instances
+# `first-class-instances`
 
-(Work in progress!)
+**(Work in progress!)**
 
 Remember when you had some neat way of building instance out of another one,
 when some type had multiple interesting instances of the same class, or when it
@@ -42,3 +42,6 @@ using ordinary Haskell code and then promote into global ones using TH (TODO).
 This library is still experimental, so please do not use it for serious things,
 but I welcome you to try it out and give some feedback!
 
+# Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md)
