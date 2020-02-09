@@ -1,4 +1,4 @@
-{-# language NoMonoLocalBinds, TemplateHaskell #-}
+{-# language CPP, NoMonoLocalBinds, TemplateHaskell #-}
 
 -- | TH for dictionary representation generation. This module is internal and
 -- provides no guarantees about stability and safety of it's interface.
@@ -147,28 +147,32 @@ bndrToType = \case
 -- | Extracts name of head of type application or returns 'Nothing'.
 appHeadName :: Type -> Maybe Name
 appHeadName = \case
-  ForallT _ _ t    -> appHeadName t
-  AppT t _         -> appHeadName t
-  SigT t _         -> appHeadName t
-  VarT n           -> Just n
-  ConT n           -> Just n
-  PromotedT n      -> Just n
-  InfixT _ n _     -> Just n
-  UInfixT _ n _    -> Just n
-  ParensT t        -> appHeadName t
-  TupleT i         -> prod "("  ',' (i - 1)  ")"
-  UnboxedTupleT i  -> prod "(#" ',' (i - 1) "#)"
-  UnboxedSumT i    -> prod "(#" '|' (i + 1) "#)"
-  ArrowT           -> Just ''(->)
-  EqualityT        -> Just ''(~)
-  ListT            -> Just ''[]
-  PromotedTupleT i -> prod "(" ',' (i - 1) ")"
-  PromotedNilT     -> Just '[]
-  PromotedConsT    -> Just '(:)
-  StarT            -> Just ''K.Type
-  ConstraintT      -> Just ''K.Constraint
-  LitT{}           -> Nothing
-  WildCardT        -> Nothing
+  ForallT _ _ t      -> appHeadName t
+  AppT t _           -> appHeadName t
+  SigT t _           -> appHeadName t
+  VarT n             -> Just n
+  ConT n             -> Just n
+  PromotedT n        -> Just n
+  InfixT _ n _       -> Just n
+  UInfixT _ n _      -> Just n
+  ParensT t          -> appHeadName t
+  TupleT i           -> prod "("  ',' (i - 1)  ")"
+  UnboxedTupleT i    -> prod "(#" ',' (i - 1) "#)"
+  UnboxedSumT i      -> prod "(#" '|' (i + 1) "#)"
+  ArrowT             -> Just ''(->)
+  EqualityT          -> Just ''(~)
+  ListT              -> Just ''[]
+  PromotedTupleT i   -> prod "(" ',' (i - 1) ")"
+  PromotedNilT       -> Just '[]
+  PromotedConsT      -> Just '(:)
+  StarT              -> Just ''K.Type
+  ConstraintT        -> Just ''K.Constraint
+  LitT{}             -> Nothing
+  WildCardT          -> Nothing
+#if MIN_VERSION_template_haskell(2,15,0)
+  AppKindT t _       -> appHeadName t
+  ImplicitParamT _ t -> appHeadName t
+#endif
  where
   prod l d i r  = Just $ mkName if
     | i <= 0    -> l                  ++ r
@@ -179,7 +183,12 @@ appHeadName = \case
 -- 'Nothing'.
 methodFieldFromDec :: Dec -> Maybe ClassDictField
 methodFieldFromDec = \case
-  SigD n (ForallT _ _ t) -> Just CDF{
+#if MIN_VERSION_template_haskell(2,15,0)
+  SigD n t ->
+#else
+  SigD n (ForallT _ _ t) ->
+#endif
+    Just CDF{
       fieldName   = fieldFromMethodName n
     , fieldSource = Method
     , origName    = n
@@ -203,15 +212,25 @@ fieldFromMethodName _ = error "fieldFromMethodName: empty 'Name'"
 -- | Creates 'Dict' instance from info about class dictionary representation.
 dictInst :: ClassDictInfo -> [Dec]
 dictInst cdi = [
-    TySynInstD ''Inst $
-      TySynEqn [dictTyArg cdi] $ ConT ''Dict `AppT` dictTyArg cdi
+    instDec
   , case classDictToRecField <$> dictFields cdi of
-      []      -> mk DataInstD    [NormalC (dictConName cdi) []     ]
-      [field] -> mk NewtypeInstD (RecC    (dictConName cdi) [field])
-      fields  -> mk DataInstD    [RecC    (dictConName cdi) fields ]
+      []      -> dictDec DataInstD    [NormalC (dictConName cdi) []     ]
+      [field] -> dictDec NewtypeInstD (RecC    (dictConName cdi) [field])
+      fields  -> dictDec DataInstD    [RecC    (dictConName cdi) fields ]
   ]
  where
-  mk con fields = con [] ''Dict [dictTyArg cdi] Nothing fields []
+#if MIN_VERSION_template_haskell(2,15,0)
+  instDec            = TySynInstD $
+    TySynEqn Nothing (ConT ''Inst `AppT` dictTyArg cdi)
+                     (ConT ''Dict `AppT` dictTyArg cdi)
+  dictDec con fields =
+    con [] Nothing (ConT ''Dict `AppT` dictTyArg cdi) Nothing fields []
+#else
+  instDec            = TySynInstD ''Inst $
+      TySynEqn [dictTyArg cdi] $ ConT ''Dict `AppT` dictTyArg cdi
+  dictDec con fields =
+    con [] ''Dict [dictTyArg cdi] Nothing fields []
+#endif
 
 -------------------------------------------------------------------------------
 -- | Converts info about class dictionary representation field to record field.

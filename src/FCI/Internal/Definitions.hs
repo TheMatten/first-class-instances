@@ -7,11 +7,9 @@ module FCI.Internal.Definitions (
   , Dict
   , inst
   , (==>)
-  , Newtype
   ) where
 
-import Data.Coerce (Coercible)
-import GHC.Exts    (unsafeCoerce#)
+import GHC.Exts (unsafeCoerce#)
 
 import qualified FCI.Internal.Types as Internal (Inst, Dict)
 
@@ -84,8 +82,3 @@ d ==> x = unsafeCoerce# (Wants @c @r x) d
 -- to satisfy typechecker.
 newtype c :=> r where
   Wants :: (c => r) -> c :=> r
-
--------------------------------------------------------------------------------
--- | Allows to 'Data.Coerce.coerce' type back and forth between it's argument
--- when safe.
-type Newtype f = forall a. (Coercible a (f a), Coercible (f a) a)

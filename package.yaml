@@ -15,7 +15,7 @@ dependencies :
 - base             >=4.7     && <5
 - Cabal  # TODO: ghcide shouldn't need this for Setup.hs
 - containers       >=0.6.0.1 && <0.7
-- template-haskell >=2.14    && <2.15
+- template-haskell >=2.14    && <2.16
 
 library : { source-dirs : src }
 
