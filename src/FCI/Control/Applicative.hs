@@ -49,12 +49,16 @@ liftA2Applicative _pure _liftA2 = Applicative{
 
 -------------------------------------------------------------------------------
 -- | Creates 'Applicative' instance for any type that can be "'coerce'd out".
-coerceApplicative :: forall f. Newtype f => Inst (Applicative f)
+coerceApplicative :: forall f
+                   . ( forall a b. Coercible (f (a -> b)) (f a -> f b)
+                     , forall a  . Coercible a            (f a)
+                     )
+                  => Inst (Applicative f)
 coerceApplicative = Applicative{
     _Functor = coerceFunctor
   , _pure    = coerce
   -- TODO: can this be simplified?
-  , (|<*>)   = coerce . (coerce :: f (a -> b) -> a -> b)
+  , (|<*>)   = coerce
   , _liftA2  = coerce
   , (|*>)    = (coerce :: (a -> b -> b) -> f a -> f b -> f b) $ const id
   , (|<*)    = (coerce :: (a -> b -> a) -> f a -> f b -> f a) const

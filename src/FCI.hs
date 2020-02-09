@@ -7,7 +7,6 @@ module FCI (
   , mkInst
   , inst
   , (==>)
-  , Newtype
   , Dict
   , module M
   ) where

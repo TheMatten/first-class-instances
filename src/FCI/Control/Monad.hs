@@ -1,7 +1,10 @@
-{-# language TemplateHaskell #-}
+{-# language CPP, TemplateHaskell #-}
 
 module FCI.Control.Monad (
-    pattern Monad, _Applicative, (|>>=), (|>>), _return, _fail
+    pattern Monad, _Applicative, (|>>=), (|>>), _return
+#if !MIN_VERSION_GLASGOW_HASKELL(8,8,0,0)
+  , _fail
+#endif
   , bindMonad
   , joinMonad
   , coerceMonad
@@ -29,7 +32,9 @@ bindMonad _return (|>>=) = Monad{
   , (|>>=)
   , (|>>)        = \ma -> (ma |>>=) . const
   , _return
+#if !MIN_VERSION_GLASGOW_HASKELL(8,8,0,0)
   , _fail        = error
+#endif
   }
 
 -------------------------------------------------------------------------------
@@ -44,17 +49,25 @@ joinMonad _fmap _return _join = Monad{
   , (|>>=)       = \ma -> _join . flip _fmap ma
   , (|>>)        = \ma -> _join . flip _fmap ma . const
   , _return
+#if !MIN_VERSION_GLASGOW_HASKELL(8,8,0,0)
   , _fail        = error
+#endif
   }
 
 -------------------------------------------------------------------------------
 -- | Creates 'Monad' instance for any type that can be "'coerce'd out".
-coerceMonad :: forall m. Newtype m => Inst (Monad m)
+coerceMonad :: forall m
+             . ( forall a b. Coercible (m (a -> b)) (m a -> m b)
+               , forall a  . Coercible a            (m a)
+               )
+            => Inst (Monad m)
 coerceMonad = Monad{
     _Applicative = coerceApplicative
   , (|>>=)       = (coerce :: (a -> (a -> b) -> b) -> m a -> (a -> m b) -> m b)
                      (&)
   , (|>>)        = (coerce :: (a -> b -> b) -> m a -> m b -> m b) $ const id
   , _return      = coerce
+#if !MIN_VERSION_GLASGOW_HASKELL(8,8,0,0)
   , _fail        = error
+#endif
   }
