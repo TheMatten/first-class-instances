@@ -1,6 +1,13 @@
-image     : haskell
+# We move stack root to project directory to allow caching
 variables : { STACK_ROOT : "${CI_PROJECT_DIR}/.stack-root" }
+cache     : { paths      : [.stack-root, .stack-work]      }
 
-test      :
-  script : [stack setup, stack test]
-  cache  : { paths : [.stack-root, .stack-work] }
+8.6.5 :
+  image  : haskell:8.6.5
+  script : [stack --system-ghc --stack-yaml=stack-8.6.5.yaml test]
+  cache  : { key : 8.6.5 }
+
+8.8.1 :
+  image  : haskell:8.8.1
+  script : [stack --system-ghc --stack-yaml=stack-8.8.1.yaml test]
+  cache  : { key : 8.8.1 }
