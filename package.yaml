@@ -1,7 +1,7 @@
 name        : first-class-instances
 synopsis    : First class typeclass instances
 description : See the README file in the project repository
-version     : 0.1.0.0
+version     : 0.2.0.0
 category    : Language
 git         : "https://gitlab.com/thematten/first-class-instances"
 license     : BSD3
